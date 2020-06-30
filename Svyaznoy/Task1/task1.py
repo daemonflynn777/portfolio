@@ -9,6 +9,9 @@ from statsmodels.tsa.arima_model import ARIMA
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
 from itertools import product
+import xgboost as xgb
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import ShuffleSplit
 import warnings
 
 # ОТРИСОВКА ВРЕМЕННОГО РЯДА
@@ -120,16 +123,50 @@ def MyPrediction(data, forecast_range):
     return forecast
 
 # ЗДЕСЬ РЕАЛИЗОВАН ПРОГНОЗ С ПОМОЩЬЮ АЛГОРИТМА XBGoost Regressor
+def XGBPrediction(data):
+    data = data.to_numpy()
+    period = 75
+    X = []
+    y = []
+    for i in range(data.shape[0] - period):
+        X.append(data[i : i + period])
+        y.append(data[i + period])
+    X.append(data[data.shape[0] - period : data.shape[0]])
+    data_x = np.array(X) # ПОСЛЕДНЯЯ СТРОКА - ПРИЗНАКИ ДЛЯ ПРОГНОЗА
+    data_y = np.array(y)
+    xgb_model = xgb.XGBRegressor(learning_rate = 0.001, verbosity = 0, nthread = -1, random_state = 0)
+    cv_gen = ShuffleSplit(n_splits = 9, test_size = 0.7, random_state = 0)
+    xgb_gs = GridSearchCV(
+             xgb_model,
+             {
+                'n_estimators': [75],
+                'max_depth': [3, 5],
+                'booster': ['gbtree', 'gblinear'],
+                'gamma': np.linspace(0.00005, 0.0001, num = 5),
+                'reg_alpha': np.linspace(0.0001, 0.001, num = 3),
+                'reg_lambda': np.linspace(0.0001, 0.001, num = 3)
+             },
+             scoring = 'r2',
+             n_jobs = -1,
+             cv = 5
+             )
+    xgb_gs.fit(data_x[ : -1], data_y)
+    print(xgb_gs.best_params_)
+    print("r2 score",xgb_gs.best_score_)
+    prediction = xgb_gs.best_estimator_.predict(data_x[-1 : ])
+    print("Прогноз с помощью XGBRegerssor", prediction)
+
 
 
 # M A I N
 #df = GetData("task1.txt")
 df = pd.read_csv("task1.csv", index_col = 0)
-ShowPlot(df['data'], "Исходные данные")
+#ShowPlot(df['data'], "Исходные данные")
 print(df.describe())
 #profile = ProfileReport(df, title="Data")
 #profile.to_file("task1.html")
 # ПОСМОТРЕТЬ ОТЧЕТ МОЖНО ОТКРЫВ ДАННЫЙ .html ФАЙЛ
-ArimaPrediction(df['data'])
+#ArimaPrediction(df['data'])
 for i in [1, 3, 10]:
     print(f"Прогноз собственным методом на {i} шагов вперед:", MyPrediction(df['data'], i))
+XGBPrediction(df['data'])
