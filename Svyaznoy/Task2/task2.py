@@ -6,8 +6,8 @@ import seaborn as sns
 
 from pandas_profiling import ProfileReport
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import train_test_split, GridSearchCV, ShuffleSplit
+from sklearn.metrics import roc_auc_score, precision_score, recall_score, accuracy_score, confusion_matrix
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 
@@ -45,9 +45,43 @@ def GetInfo(dframe):
     profile = ProfileReport(dframe, title = "Task2 Data")
     profile.to_file("task2.html")
 
-def KNNClassifier():
-    model = KNeighborsClassifier(njobs = -1)
+def KNNClassifier(dframe):
+    #print(dframe.columns)
+    dframe = dframe.drop(['x_3', 'x_5','x_6', 'x_7', 'x_8', 'x_9', 'x_10'], axis = 1)
+    X = dframe[list(dframe.columns)[ : -1]][ : -20].to_numpy()
+    y = dframe[list(dframe.columns)[-1 : ]][ : -20].to_numpy().reshape(len(dframe['y']) - 20, )
+    X_validate = dframe[list(dframe.columns)[ : -1]][-20 : ].to_numpy()
+    y_validate = dframe[list(dframe.columns)[-1 : ]][-20 : ].to_numpy()
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.08, random_state = 16)
+    model = KNeighborsClassifier(n_jobs = -1)
+    cv_gen = ShuffleSplit(n_splits = 10, test_size = 0.25, random_state = 0)
+    model_gs = GridSearchCV(model,
+                            {
+                                'n_neighbors': [2, 4, 6, 8],
+                                'weights': ['uniform', 'distance']
+                            },
+                            scoring = 'accuracy',
+                            n_jobs = -1,
+                            cv = cv_gen
+                            )
+    model_gs.fit(X, y)
+    print(model_gs.best_params_)
+    print("Accuracy score", model_gs.best_score_)
+    #print(X_validate.shape)
+    for i in range(X_validate.shape[0]):
+        prediction = model_gs.best_estimator_.predict(X_validate[i].reshape(1, X_validate.shape[1]))
+        print("Predicted:", prediction)
+        print("Real:", y_validate[i])
     return 0
+
+def SVMClassifier(dframe):
+    dframe = dframe.drop(['x_3', 'x_5','x_6', 'x_7', 'x_8', 'x_9', 'x_10'], axis = 1)
+    X = dframe[list(dframe.columns)[ : -1]][ : -20].to_numpy()
+    y = dframe[list(dframe.columns)[-1 : ]][ : -20].to_numpy().reshape(len(dframe['y']) - 20, )
+    X_validate = dframe[list(dframe.columns)[ : -1]][-20 : ].to_numpy()
+    y_validate = dframe[list(dframe.columns)[-1 : ]][-20 : ].to_numpy()
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.08, random_state = 16)
+    model = SVC()
 
 
 # M A I N
@@ -62,6 +96,9 @@ for name in ['x_3', 'x_6', 'x_7', 'x_8', 'x_9', 'x_10']:
     df[name] = pd.Series(MinMaxScaler(feature_range=(0, 1)).fit_transform(np.array([[1/val for val in df[name]]]).reshape(len(df[name]), 1)).reshape(1, len(df[name]))[0])
 '''
 
+for name in list(df.columns)[ : -1]:
+    df[name] = pd.Series(np.array([1000000*val for val in df[name].to_numpy()]))
+
 #GetInfo(df)
 
 class_balance = dict.fromkeys([i for i in range(3, 30)], 0)
@@ -69,6 +106,4 @@ for val in df['y']:
     class_balance[val] += 1
 print("Процент каждого класса в выборке:", [100*class_balance[key]/len(df['y']) for key in class_balance])
 
-X = df[list(df.columns)[ : -1]]
-y = df[list(df.columns)[-1 : ]]
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.08, random_state = 16)
+KNNClassifier(df)
