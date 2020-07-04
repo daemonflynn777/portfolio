@@ -7,13 +7,18 @@ import seaborn as sns
 from pandas_profiling import ProfileReport
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split, GridSearchCV, ShuffleSplit
-from sklearn.metrics import roc_auc_score, precision_score, recall_score, accuracy_score, confusion_matrix
+from sklearn.metrics import roc_auc_score, precision_score, recall_score, accuracy_score, confusion_matrix, r2_score, mean_absolute_error, make_scorer
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.neural_network import MLPClassifier
+from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.naive_bayes import ComplementNB
 
+
+def func_reg_class_error(y_true, y_pred):
+    err = accuracy_score(y_true, np.array([int(pred) + (pred % int(pred) >= 0.5) for pred in y_pred]))
+    return err
+reg_class_error = make_scorer(func_reg_class_error, greater_is_better = True)
 
 def GetData(FileName):
     input_file = open(FileName, 'r')
@@ -140,21 +145,26 @@ def SVMClassifier(dframe):
 
 def NeuralClassifier(dframe):
     #print(dframe.columns)
-    dframe = dframe.drop(['x_7', 'x_9'], axis = 1)
+    dframe = dframe.drop(['x_7', 'x_9', 'x_10'], axis = 1)
     X = dframe[list(dframe.columns)[ : -1]][ : -20].to_numpy()
     y = dframe[list(dframe.columns)[-1 : ]][ : -20].to_numpy().reshape(len(dframe['y']) - 20, )
     X_validate = dframe[list(dframe.columns)[ : -1]][-20 : ].to_numpy()
     y_validate = dframe[list(dframe.columns)[-1 : ]][-20 : ].to_numpy()
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.08, random_state = 16)
-    model = MLPClassifier(hidden_layer_sizes = (128, 128,), max_iter = 1000, verbose = 0)
+    model = MLPRegressor(hidden_layer_sizes = (128, 128, 128, 128, ), max_iter = 2000, verbose = 0)
     cv_gen = ShuffleSplit(n_splits = 10, test_size = 0.25, random_state = 0)
     model_gs = GridSearchCV(model,
                             {
                                 'activation': ['relu'],
-                                'solver': ['adam'],
-                                'batch_size': [128]
+                                'solver': ['sgd'],
+                                'batch_size': [32, 64],
+                                'learning_rate': ['adaptive'],
+                                'learning_rate_init': [0.001],
+                                'momentum': [0.985],
+                                'beta_1': [0.9],
+                                'beta_2': [0.999]
                             },
-                            scoring = 'accuracy',
+                            scoring = reg_class_error,
                             n_jobs = -1,
                             cv = cv_gen
                             )
@@ -164,7 +174,7 @@ def NeuralClassifier(dframe):
     #print(X_validate.shape)
     for i in range(X_validate.shape[0]):
         prediction = model_gs.best_estimator_.predict(X_validate[i].reshape(1, X_validate.shape[1]))
-        print("Predicted:", prediction)
+        print("Predicted:", int(min(27, max(prediction, 3)))) # ПРИСВАЕТСЯ НИЖНЯЯ ИЛИ ВЕРХНЯЯ ГРАНИЦА, ЕСЛИ РЕГРЕССИЯ-КЛАССИФИКАТОР ВЫДАСТ ЧИСЛО, НЕ ЯВЛЯЮЩЕЕСЯ НОМЕРОМ КЛАССА
         print("Real:", y_validate[i])
         print("")
     return 0
@@ -218,9 +228,9 @@ for name in list(df.columns)[ : -1]:
 class_balance = dict.fromkeys([i for i in range(3, 30)], 0)
 for val in df['y']:
     class_balance[val] += 1
-print("Процент каждого класса в выборке:", [100*class_balance[key]/len(df['y']) for key in class_balance])
+print("Процент каждого класса в выборке:", [1*class_balance[key]/len(df['y']) for key in class_balance])
 balance = [class_balance[key]/len(df['y']) for key in class_balance]
 
 #KNNClassifier(df)
 
-BayesClassifier(df)
+NeuralClassifier(df)
