@@ -12,6 +12,7 @@ from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
+from sklearn.naive_bayes import ComplementNB
 
 
 def GetData(FileName):
@@ -168,6 +169,35 @@ def NeuralClassifier(dframe):
         print("")
     return 0
 
+def BayesClassifier(dframe):
+    #print(dframe.columns)
+    dframe = dframe.drop(['x_7'], axis = 1)
+    X = dframe[list(dframe.columns)[ : -1]][ : -20].to_numpy()
+    y = dframe[list(dframe.columns)[-1 : ]][ : -20].to_numpy().reshape(len(dframe['y']) - 20, )
+    X_validate = dframe[list(dframe.columns)[ : -1]][-20 : ].to_numpy()
+    y_validate = dframe[list(dframe.columns)[-1 : ]][-20 : ].to_numpy()
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.08, random_state = 16)
+    model = ComplementNB()
+    cv_gen = ShuffleSplit(n_splits = 10, test_size = 0.25, random_state = 0)
+    model_gs = GridSearchCV(model,
+                            {
+                                'norm': [True, False]
+                            },
+                            scoring = 'accuracy',
+                            n_jobs = -1,
+                            cv = cv_gen
+                            )
+    model_gs.fit(X, y)
+    print(model_gs.best_params_)
+    print("Accuracy score", model_gs.best_score_)
+    #print(X_validate.shape)
+    for i in range(X_validate.shape[0]):
+        prediction = model_gs.best_estimator_.predict(X_validate[i].reshape(1, X_validate.shape[1]))
+        print("Predicted:", prediction)
+        print("Real:", y_validate[i])
+        print("")
+    return 0
+
 # M A I N
 #df = GetData("task2.txt")
 df = pd.read_csv("task2.csv", index_col = 0)
@@ -189,7 +219,8 @@ class_balance = dict.fromkeys([i for i in range(3, 30)], 0)
 for val in df['y']:
     class_balance[val] += 1
 print("Процент каждого класса в выборке:", [100*class_balance[key]/len(df['y']) for key in class_balance])
+balance = [class_balance[key]/len(df['y']) for key in class_balance]
 
 #KNNClassifier(df)
 
-NeuralClassifier(df)
+BayesClassifier(df)
