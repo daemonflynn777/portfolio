@@ -48,6 +48,11 @@ def Visualisation(dframe):
     plt.show()
     fig.savefig("heatmap.png")
 
+    for pred in list(dframe.columns)[ : -1]:
+        fig = plt.figure(figsize = (12 ,9), num = 'Предиктор и зависимая величина')
+        plt.scatter(dframe[pred], dframe['y'], color = 'purple', label = 'Проекция на предиктор')
+        plt.show()
+
 def GetInfo(dframe):
     print(dframe.describe())
     profile = ProfileReport(dframe, title = "Task2 Data")
@@ -160,9 +165,9 @@ def NeuralClassifier(dframe):
                                 'batch_size': [32, 64],
                                 'learning_rate': ['adaptive'],
                                 'learning_rate_init': [0.001],
-                                'momentum': [0.985],
+                                'momentum': [0.984, 0.986],
                                 'beta_1': [0.9],
-                                'beta_2': [0.999]
+                                'beta_2': [0.999, 0.9991, 0.9992]
                             },
                             scoring = reg_class_error,
                             n_jobs = -1,
@@ -174,7 +179,8 @@ def NeuralClassifier(dframe):
     #print(X_validate.shape)
     for i in range(X_validate.shape[0]):
         prediction = model_gs.best_estimator_.predict(X_validate[i].reshape(1, X_validate.shape[1]))
-        print("Predicted:", int(min(27, max(prediction, 3)))) # ПРИСВАЕТСЯ НИЖНЯЯ ИЛИ ВЕРХНЯЯ ГРАНИЦА, ЕСЛИ РЕГРЕССИЯ-КЛАССИФИКАТОР ВЫДАСТ ЧИСЛО, НЕ ЯВЛЯЮЩЕЕСЯ НОМЕРОМ КЛАССА
+        prediction = int(min(27, max(prediction, 3)))
+        print("Predicted:", prediction + (prediction % int(prediction) >= 0.5)) # ПРИСВАЕТСЯ НИЖНЯЯ ИЛИ ВЕРХНЯЯ ГРАНИЦА, ЕСЛИ РЕГРЕССИЯ-КЛАССИФИКАТОР ВЫДАСТ ЧИСЛО, НЕ ЯВЛЯЮЩЕЕСЯ НОМЕРОМ КЛАССА
         print("Real:", y_validate[i])
         print("")
     return 0
