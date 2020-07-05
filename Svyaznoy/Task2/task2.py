@@ -4,6 +4,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+import pickle
+
 from pandas_profiling import ProfileReport
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split, GridSearchCV, ShuffleSplit
@@ -165,9 +167,9 @@ def NeuralClassifier(dframe):
                                 'batch_size': [32, 64],
                                 'learning_rate': ['adaptive'],
                                 'learning_rate_init': [0.001],
-                                'momentum': [0.984, 0.986],
+                                'momentum': [0.986],
                                 'beta_1': [0.9],
-                                'beta_2': [0.999, 0.9991, 0.9992]
+                                'beta_2': [0.9992]
                             },
                             scoring = reg_class_error,
                             n_jobs = -1,
@@ -183,7 +185,9 @@ def NeuralClassifier(dframe):
         print("Predicted:", prediction + (prediction % int(prediction) >= 0.5)) # ПРИСВАЕТСЯ НИЖНЯЯ ИЛИ ВЕРХНЯЯ ГРАНИЦА, ЕСЛИ РЕГРЕССИЯ-КЛАССИФИКАТОР ВЫДАСТ ЧИСЛО, НЕ ЯВЛЯЮЩЕЕСЯ НОМЕРОМ КЛАССА
         print("Real:", y_validate[i])
         print("")
-    return 0
+    model_file = open("nn_reg_classifier.pkl", "wb")
+    pickle.dump(model_gs, model_file)
+    print("Предикторы x_7, x_9 и x_10 были удалены")
 
 def BayesClassifier(dframe):
     #print(dframe.columns)
@@ -239,4 +243,18 @@ balance = [class_balance[key]/len(df['y']) for key in class_balance]
 
 #KNNClassifier(df)
 
-NeuralClassifier(df)
+# В ЭТОМ БЛОКЕ ЗАГРУЖАЕТСЯ СОХРАНЕННАЯ МОДЕЛЬ И ПОДГОТАВЛИВАЮТСЯ ДАННЫЕ ДЛЯ НЕЕ
+
+nn_model_file = open("nn_reg_classifier.pkl", "rb")
+nn_model = pickle.load(nn_model_file)
+df_nn = df.copy()
+df_nn = df_nn.drop(['x_7', 'x_9', 'x_10'], axis = 1)
+X = df_nn[list(df_nn.columns)[ : -1]][ : ].to_numpy()
+y = df_nn[list(df_nn.columns)[-1 : ]][ : ].to_numpy().reshape(len(df_nn['y']), )
+nn_predict = nn_model.predict(X[10].reshape(1, X.shape[1]))
+nn_predict = int(min(27, max(nn_predict, 3)))
+nn_predict = nn_predict + (nn_predict % int(nn_predict) >= 0.5)
+print("Прогноз:", nn_predict)
+print("Реальность:", int(y[10]))
+
+#NeuralClassifier(df)
