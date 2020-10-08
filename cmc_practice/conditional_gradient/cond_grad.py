@@ -55,10 +55,14 @@ class Functional():
 
 
 class Functional():
-    def __init__(self, input_func, input_lims):
+    def __init__(self, input_func, input_lims, dimensions):
         self.func = input_func
         self.limits = input_lims
-        self.u_k = np.random.random(5) #vector of normally distributed values from [0.0, 1.0)
+        #self.u_k = np.random.random(dimensions) #vector of normally distributed values from [0.0, 1.0)
+        self.u_k = np.array([np.random.uniform(input_lims[i][0], input_lims[i][1], 1) for i in range(dimensions)]).reshape(dimensions) # начальная точка, каждая координата которой удовлетворяет ограничениям на множество
+        self.u_k_line = np.zeros(dimensions)
+        #self.func_der = lamda var: np.dot(self.u_k, )
+        self.lin_func = lambda J_k, u: np.dot(J_k, u)
 
     def Gradient(self, point):
         grad = []
@@ -69,12 +73,12 @@ class Functional():
             dimension_b = np.array(point)
             dimension_f[pos] += h #шаг вперед
             dimension_b[pos] -= h #шаг назад
-            print(dimension_f)
-            print(dimension_b)
-            print(self.func(dimension_f.tolist()))
-            print(self.func(dimension_b.tolist()))
+            #print(dimension_f)
+            #print(dimension_b)
+            #print(self.func(dimension_f.tolist()))
+            #print(self.func(dimension_b.tolist()))
             grad.append((self.func(dimension_f.tolist()) - self.func(dimension_b.tolist())) / (2 * h))
-        return grad
+        return np.array(grad)
 
     def Hessian(self, point):
         hess = []
@@ -97,19 +101,27 @@ class Functional():
                     dimension_f[pos2] += h #фиксируем координату 2
                     dimension_b[pos2] += h #фиксируем координату 2
                     der1 = (self.func(dimension_f.tolist()) - self.func(dimension_b.tolist())) / (2 * h) #производная по координате 1
-                    dimension_f[pos1] = num1
-                    dimension_b[pos1] = num1
-                    print(der1)
+                    dimension_f[pos1] = num1 + h
+                    dimension_b[pos1] = num1 - h
+                    #print(der1)
                     dimension_f[pos2] -= h #шаг вперед, координата 2
                     dimension_b[pos2] -= h #шаг назад, координата 2
-                    der2 = der1 - (self.func(dimension_f.tolist()) - self.func(dimension_b.tolist())) / (2 * h) #производная по координате 2
+                    der2 = (der1 - (self.func(dimension_f.tolist()) - self.func(dimension_b.tolist())) / (2 * h)) / (1 * h) #производная по координате 2
                     partial_derivative.append(der2)
             hess.append(partial_derivative)
-        return hess
+        return np.array(hess)
+
+    def OptimizeLinear(self): # вычисляет оптимальную точку вспомогательной ф-ии с учетом ограничений на множество
+        coefs = self.Gradient(self.u_k.tolist())
+        print(coefs)
+        self.u_k_line = np.array([self.limits[i][int(coefs[i] <= 0)] for i in range(len(self.limits))])
 
 
 
 # M A I N
-funct = Functional(lambda x: x[0]**3 + (x[0]**2)*(x[1]**2) + x[1]**3, lambda y: 2 - y[0] + 1 - y[1] - y[0])
-print(funct.Gradient([2.0, 5.0]))
-print(funct.Hessian([2.0, 5.0]))
+funct = Functional(lambda x: x[0]**3 + (x[0]**2)*(x[1]**2) + x[1]**3, [[0.0, 3.0], [1.0, 5.0]], 2)
+print(funct.u_k)
+print("Gradient:", funct.Gradient([2.0, 5.0]))
+print("Hessian:", funct.Hessian([2.0, 5.0]))
+funct.OptimizeLinear()
+print(funct.u_k_line)
