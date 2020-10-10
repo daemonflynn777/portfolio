@@ -1,68 +1,22 @@
 import numpy as np
-
-'''
-class Functional():
-    def __init__(self, input_str):
-        input_str_tmp = input_str.replace('<', '(').replace('>', ')').replace(',', ')#(')
-        #self.func = input_str.replace('<', '(').replace('>', ')').replace(',', ')#(')
-        self.func = []
-        self.coefs = []
-        is_num = 0
-        for chr in input_str_tmp:
-            if chr in actions:
-                if is_num != 0:
-                    self.func.append(is_num)
-                    is_num = 0
-                self.func.append(chr)
-            elif chr.isalpha():
-                if is_num != 0:
-                    self.func.append(is_num)
-                    is_num = 0
-                self.func.append(chr)
-                if chr != 'u':
-                    self.coefs.append(chr)
-            else:
-                is_num = is_num*10 + int(chr)
-        if input_str_tmp[len(input_str_tmp) - 1].isdigit():
-            self.func.append(is_num)
-
-    def rpn(self):
-        self.func_rpn = []
-        operands = []
-        func_reversed = self.func.copy()
-        func_reversed.reverse()
-        #print(func_reversed)
-        while func_reversed:
-            elem = func_reversed.pop()
-            if elem in actions:
-                if len(operands) == 0:
-                    operands.append(elem)
-                else:
-                    if (elem in ['*', '/', '#'] and operands[len(operands) - 1] in ['*', '/', '#', '(']) or (elem in ['+', '-'] and operands[len(operands) - 1] in ['+', '-', '(']) or (elem in ['+', '-'] and operands[len(operands) - 1] in ['*', '/', '#', '(']):
-                        self.func_rpn.append(operands.pop())
-                        operands.append(elem)
-                    elif (elem in ['*', '/', '#'] and operands[len(operands) - 1] in ['+', '-', '(']) or elem == '(':
-                        operands.append(elem)
-                    elif elem == ')':
-                        while operands[len(operands) - 1] != '(':
-                            self.func_rpn.append(operands.pop())
-                        operands.pop()
-            elif type(elem) != 'str':
-                self.func_rpn.append(elem)
-        while operands:
-            self.func_rpn.append(operands.pop())
-'''
-
+from numpy import linalg as LA
+from math import sqrt
 
 class Functional():
-    def __init__(self, input_func, input_lims, dimensions):
+    def __init__(self, input_func, input_func1d, input_lims, dimensions, input_func_str = "функция многих переменных", silent = 1):
         self.func = input_func
+        self.func1d = input_func1d
+        self.input_func_str = input_func_str
         self.limits = input_lims
-        #self.u_k = np.random.random(dimensions) #vector of normally distributed values from [0.0, 1.0)
         self.u_k = np.array([np.random.uniform(input_lims[i][0], input_lims[i][1], 1) for i in range(dimensions)]).reshape(dimensions) # начальная точка, каждая координата которой удовлетворяет ограничениям на множество
         self.u_k_line = np.zeros(dimensions)
-        #self.func_der = lamda var: np.dot(self.u_k, )
+        self.alpha_k = 0
         self.lin_func = lambda J_k, u: np.dot(J_k, u)
+        self.silent = silent
+        print("Минимизируемый функционал:", self.input_func_str)
+        print("Ограничения на множество:")
+        for i in range(dimensions):
+            print("%f <= x_%i <= %f" %(self.limits[i][0], i, self.limits[i][1]))
 
     def Gradient(self, point):
         grad = []
@@ -73,11 +27,8 @@ class Functional():
             dimension_b = np.array(point)
             dimension_f[pos] += h #шаг вперед
             dimension_b[pos] -= h #шаг назад
-            #print(dimension_f)
-            #print(dimension_b)
-            #print(self.func(dimension_f.tolist()))
-            #print(self.func(dimension_b.tolist()))
-            grad.append((self.func(dimension_f.tolist()) - self.func(dimension_b.tolist())) / (2 * h))
+            #grad.append((self.func(dimension_f.tolist()) - self.func(dimension_b.tolist())) / (2 * h)) # центральная производная
+            grad.append((self.func(dimension_f) - self.func(dimension_b)) / (2 * h)) # центральная производная
         return np.array(grad)
 
     def Hessian(self, point):
@@ -103,7 +54,6 @@ class Functional():
                     der1 = (self.func(dimension_f.tolist()) - self.func(dimension_b.tolist())) / (2 * h) #производная по координате 1
                     dimension_f[pos1] = num1 + h
                     dimension_b[pos1] = num1 - h
-                    #print(der1)
                     dimension_f[pos2] -= h #шаг вперед, координата 2
                     dimension_b[pos2] -= h #шаг назад, координата 2
                     der2 = (der1 - (self.func(dimension_f.tolist()) - self.func(dimension_b.tolist())) / (2 * h)) / (1 * h) #производная по координате 2
@@ -111,17 +61,87 @@ class Functional():
             hess.append(partial_derivative)
         return np.array(hess)
 
-    def OptimizeLinear(self): # вычисляет оптимальную точку вспомогательной ф-ии с учетом ограничений на множество
-        coefs = self.Gradient(self.u_k.tolist())
-        print(coefs)
+    def BrentComb(self, a = 0, c = 1, eps = 0.001):
+        K = (3 - sqrt(5)) / 2
+        x = (a + c)/2
+        w = (a + c)/2
+        v = (a + c)/2
+        u = 2*c
+        f_x = self.func1d(x)
+        f_w = self.func1d(w)
+        f_v = self.func1d(v)
+        while abs(u - x) >= eps:
+            if ((x != w and w != v and x != v) and (f_x != f_w and f_w != f_v and f_x != f_v)):
+                u = x - (((x - v)**2)*(f_x - f_w) - ((x - w)**2)*(f_x - f_v))/(2*((x - v)*(f_x - f_w) - (x - w)*(f_x - f_v)))
+            if ((u >= a + eps) and (u <= c - eps) and abs(u - x) < g/2):
+                d = abs(u - x)
+            else:
+                if x < (c - a)/2:
+                    u = x + K*(c - x) # золотое сечение на [x, c]
+                    d = c - x
+                else:
+                    u = x - K*(x - a) # золотое сечение на [a, x]
+                    d = x - a
+            if abs(u - x) < eps:
+                u = x + eps*np.sign(u - x)
+            f_u = self.func1d(u)
+            if f_u <= f_x:
+                if u >= x:
+                    a = x
+                else:
+                    c = x
+                v = w
+                w = x
+                x = u
+                f_v = f_w
+                f_w = f_x
+                f_x = f_u
+            else:
+                if u >= x:
+                    c = u
+                else:
+                    a = u
+                if ((f_u <= f_w) or (w == x)):
+                    v = w
+                    w = u
+                    f_v = f_w
+                    f_w = f_u
+                elif ((f_u <= f_v) or (v == x) or (v == w)):
+                    v = u
+                    f_v = f_u
+        return u, f_u
+
+    def Optimize(self, eps = 0.001): # вычисляет оптимальную точку
+        coefs = self.Gradient(self.u_k)
         self.u_k_line = np.array([self.limits[i][int(coefs[i] <= 0)] for i in range(len(self.limits))])
+        self.alpha_k = self.BrentComb()[0]
+        u_k_next = self.u_k + self.alpha_k*(self.u_k_line - self.u_k)
+        if self.silent == 0:
+            print("\nТекущее значение u_k:", self.u_k)
+            print("Текущее значение u_k_с_чертой:", self.u_k_line)
+            print("Текущее значение alpha_k:", self.u_k)
+            print("Текущее значение u_k+1:", u_k_next)
+        while LA.norm(u_k_next - self.u_k) >= eps:
+            self.u_k = u_k_next
+            coefs = self.Gradient(self.u_k)
+            self.u_k_line = np.array([self.limits[i][int(coefs[i] <= 0)] for i in range(len(self.limits))])
+            self.alpha_k = self.BrentComb()[0]
+            u_k_next = self.u_k + self.alpha_k*(self.u_k_line - self.u_k)
+            if self.silent == 0:
+                print("\nТекущее значение u_k:", self.u_k)
+                print("Текущее значение u_k_с_чертой:", self.u_k_line)
+                print("Текущее значение alpha_k:", self.u_k)
+                print("Текущее значение u_k+1:", u_k_next)
+        print("\nОптимизация завершена")
+        print("Минимальное знаение функционала:", self.func(u_k_next))
+        print("Точка минимума:", u_k_next)
+
 
 
 
 # M A I N
-funct = Functional(lambda x: x[0]**3 + (x[0]**2)*(x[1]**2) + x[1]**3, [[0.0, 3.0], [1.0, 5.0]], 2)
-print(funct.u_k)
-print("Gradient:", funct.Gradient([2.0, 5.0]))
-print("Hessian:", funct.Hessian([2.0, 5.0]))
-funct.OptimizeLinear()
-print(funct.u_k_line)
+funct = Functional(lambda x: x[0]**3 + (x[0]**2)*(x[1]**2) + x[1]**3,
+                   lambda y: 2*(y**3) + y**4,
+                   [[0.0, 3.0], [1.0, 5.0]], 2,
+                   "F = x_0^3 + x_0^2*x_1^2 + x_1^3")
+funct.Optimize()
