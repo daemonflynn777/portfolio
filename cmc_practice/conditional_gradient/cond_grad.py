@@ -11,7 +11,6 @@ class Functional():
         self.u_k = np.array([np.random.uniform(input_lims[i][0], input_lims[i][1], 1) for i in range(dimensions)]).reshape(dimensions) # начальная точка, каждая координата которой удовлетворяет ограничениям на множество
         self.u_k_line = np.zeros(dimensions)
         self.alpha_k = 0
-        self.lin_func = lambda J_k, u: np.dot(J_k, u)
         self.silent = silent
         print("Минимизируемый функционал:", self.input_func_str)
         print("Ограничения на множество:")
@@ -27,7 +26,6 @@ class Functional():
             dimension_b = np.array(point)
             dimension_f[pos] += h #шаг вперед
             dimension_b[pos] -= h #шаг назад
-            #grad.append((self.func(dimension_f.tolist()) - self.func(dimension_b.tolist())) / (2 * h)) # центральная производная
             grad.append((self.func(dimension_f) - self.func(dimension_b)) / (2 * h)) # центральная производная
         return np.array(grad)
 
@@ -61,7 +59,7 @@ class Functional():
             hess.append(partial_derivative)
         return np.array(hess)
 
-    def BrentComb(self, a = 0, c = 1, eps = 0.001):
+    def BrentComb(self, a = 0, c = 1, eps = 0.001): # комбинированный метод Брента минимизации ф-ии одной переменной
         K = (3 - sqrt(5)) / 2
         x = (a + c)/2
         w = (a + c)/2
@@ -119,7 +117,7 @@ class Functional():
         if self.silent == 0:
             print("\nТекущее значение u_k:", self.u_k)
             print("Текущее значение u_k_с_чертой:", self.u_k_line)
-            print("Текущее значение alpha_k:", self.u_k)
+            print("Текущее значение alpha_k:", self.alpha_k)
             print("Текущее значение u_k+1:", u_k_next)
         while LA.norm(u_k_next - self.u_k) >= eps:
             self.u_k = u_k_next
@@ -130,18 +128,8 @@ class Functional():
             if self.silent == 0:
                 print("\nТекущее значение u_k:", self.u_k)
                 print("Текущее значение u_k_с_чертой:", self.u_k_line)
-                print("Текущее значение alpha_k:", self.u_k)
+                print("Текущее значение alpha_k:", self.alpha_k)
                 print("Текущее значение u_k+1:", u_k_next)
         print("\nОптимизация завершена")
         print("Минимальное знаение функционала:", self.func(u_k_next))
         print("Точка минимума:", u_k_next)
-
-
-
-
-# M A I N
-funct = Functional(lambda x: x[0]**3 + (x[0]**2)*(x[1]**2) + x[1]**3,
-                   lambda y: 2*(y**3) + y**4,
-                   [[0.0, 3.0], [1.0, 5.0]], 2,
-                   "F = x_0^3 + x_0^2*x_1^2 + x_1^3")
-funct.Optimize()
