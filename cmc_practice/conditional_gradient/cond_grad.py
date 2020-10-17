@@ -3,9 +3,9 @@ from numpy import linalg as LA
 from math import sqrt
 
 class Functional():
-    def __init__(self, input_func, input_func1d, input_lims, dimensions, input_func_str = "функция многих переменных", silent = 1):
+    def __init__(self, input_func, input_lims, dimensions, input_func_str = "функция многих переменных", silent = 1):
         self.func = input_func
-        self.func1d = input_func1d
+        #self.func1d = input_func1d
         self.input_func_str = input_func_str
         self.limits = input_lims
         self.u_k = np.array([np.random.uniform(input_lims[i][0], input_lims[i][1], 1) for i in range(dimensions)]).reshape(dimensions) # начальная точка, каждая координата которой удовлетворяет ограничениям на множество
@@ -59,87 +59,23 @@ class Functional():
             hess.append(partial_derivative)
         return np.array(hess)
 
-    def BrentComb(self, a = 0.0, c = 1.0, flt_num = 2): # комбинированный метод Брента минимизации ф-ии одной переменной
-        K = (3 - sqrt(5)) / 2
-        x = a + K*(c - a)
-        w = a + K*(c - a)
-        v = a + K*(c - a)
-        u = (c - a)/10.0
-        eps = (0.1)**flt_num
-        tol = eps*abs(x) + eps*0.1
-        #f_x = self.func1d(x)
-        #f_w = self.func1d(w)
-        #f_v = self.func1d(v)
-        f_x = self.func(self.u_k + x*(self.u_k_line - self.u_k))
-        f_w = self.func(self.u_k + x*(self.u_k_line - self.u_k))
-        f_v = self.func(self.u_k + x*(self.u_k_line - self.u_k))
-        d = c - a
-        e = c - a
-        iteration = 0
-        flag = 0
-        #while round(abs(x - (a + c)/2.0) + (c - a)/2.0, flt_num) > 2.0*tol:
-        while flag == 0:
-            f_x = self.func(self.u_k + x*(self.u_k_line - self.u_k))
-            f_w = self.func(self.u_k + x*(self.u_k_line - self.u_k))
-            f_v = self.func(self.u_k + x*(self.u_k_line - self.u_k))
-            print(iteration)
-            print(a, c)
-            iteration += 1
-            #print(abs(u - x))
-            print(abs(x - (a + c)/2.0) + (c - a)/2.0)
-            g = e
-            e = d
-            tol = eps*abs(x) + eps*0.1
-            if round(abs(x - (a + c)/2.0) + (c - a)/2.0, flt_num) <= 2.0*tol:
-                return x, self.func(self.u_k + x*(self.u_k_line - self.u_k))
-            if ((x != w and w != v and x != v) and (f_x != f_w and f_w != f_v and f_x != f_v)):
-                u = x - (((x - v)**2)*(f_x - f_w) - ((x - w)**2)*(f_x - f_v))/(2*((x - v)*(f_x - f_w) - (x - w)*(f_x - f_v)))
-                if ((u >= a) and (u <= c)) and abs(u - x) < g/2:
-                    if (u - a < 2.0*tol) or (c - u < 2.0*tol):
-                        u = x - tol*np.sign(x - (a + c)/2.0)
-            else:
-                if x < (a + c)/2:
-                    u = x + K*(c - x) # золотое сечение на [x, c]
-                    e = c - x
-                else:
-                    u = x - K*(x - a) # золотое сечение на [a, x]
-                    e = x - a
-            if abs(u - x) < tol:
-                u = x + tol*np.sign(u - x)
-            #f_u = self.func1d(u)
-            f_u = self.func(self.u_k + u*(self.u_k_line - self.u_k))
-            d = abs(u - x)
-            if f_u <= f_x:
-                if u >= x:
-                    a = x
-                else:
-                    c = x
-                v = w
-                w = x
-                x = u
-                f_v = f_w
-                f_w = f_x
-                f_x = f_u
-            else:
-                if u >= x:
-                    c = u
-                else:
-                    a = u
-                if ((f_u <= f_w) or (w == x)):
-                    v = w
-                    w = u
-                    f_v = f_w
-                    f_w = f_u
-                elif ((f_u <= f_v) or (v == x) or (v == w)):
-                    v = u
-                    f_v = f_u
-        return u, f_u
+    def FindMin(self, a = 0.0, c = 1.0, flt_num = 3, precision = 1000000): # комбинированный метод Брента минимизации ф-ии одной переменной
+        eps = (0.01)**flt_num
+        delta = (c - a)/precision
+        x = a + eps
+        values = []
+        while x <= c - eps:
+            values.append(self.func(self.u_k + x*(self.u_k_line - self.u_k)))
+            x += delta
+        return a + eps + delta*values.index(min(values)), min(values)
+
+
 
     def Optimize(self, flt_num = 3): # вычисляет оптимальную точку
         eps = (0.1)**flt_num
         coefs = self.Gradient(self.u_k)
         self.u_k_line = np.array([self.limits[i][int(coefs[i] <= 0)] for i in range(len(self.limits))])
-        self.alpha_k = self.BrentComb()[0]
+        self.alpha_k = self.FindMin()[0]
         u_k_next = (self.u_k + self.alpha_k*(self.u_k_line - self.u_k)).tolist()
         if self.silent == 0:
             print("\nТекущее значение u_k:", self.u_k)
@@ -150,7 +86,7 @@ class Functional():
             self.u_k = u_k_next
             coefs = self.Gradient(self.u_k)
             self.u_k_line = np.array([self.limits[i][int(coefs[i] <= 0)] for i in range(len(self.limits))])
-            self.alpha_k = self.BrentComb()[0]
+            self.alpha_k = self.FindMin()[0]
             u_k_next = (self.u_k + self.alpha_k*(self.u_k_line - self.u_k)).tolist()
             if self.silent == 0:
                 print("\nТекущее значение u_k:", self.u_k)
