@@ -59,7 +59,7 @@ class Functional():
             hess.append(partial_derivative)
         return np.array(hess)
 
-    def FindMin(self, a = 0.0, c = 1.0, flt_num = 3, precision = 1000000): # комбинированный метод Брента минимизации ф-ии одной переменной
+    def FindMin(self, a = 0.0, c = 1.0, flt_num = 3, precision = 1000000): # метод покрытий для минимизации ф-ии одной переменной
         eps = (0.01)**flt_num
         delta = (c - a)/precision
         x = a + eps
