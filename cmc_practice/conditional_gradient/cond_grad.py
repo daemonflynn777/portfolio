@@ -1,21 +1,26 @@
 import numpy as np
 from numpy import linalg as LA
 from math import sqrt
+from tkinter import *
+from tkinter.ttk import Checkbutton
+from tkinter import scrolledtext
+
 
 class Functional():
-    def __init__(self, input_func, input_lims, dimensions, input_func_str = "функция многих переменных", silent = 1):
+    def __init__(self, input_func, sphere_center, sphere_rad, start_point, input_func_str = "функция многих переменных", silent = 1):
         self.func = input_func
         #self.func1d = input_func1d
         self.input_func_str = input_func_str
-        self.limits = input_lims
-        self.u_k = np.array([np.random.uniform(input_lims[i][0], input_lims[i][1], 1) for i in range(dimensions)]).reshape(dimensions) # начальная точка, каждая координата которой удовлетворяет ограничениям на множество
-        self.u_k_line = np.zeros(dimensions).tolist()
+        self.sph_center = np.array(sphere_center)
+        self.sph_rad = sqrt(sphere_rad)
+        self.u_k = np.array(start_point) # начальная точка, каждая координата которой удовлетворяет ограничениям на множество
+        self.u_k_line = np.zeros(len(start_point)).tolist()
         self.alpha_k = 0
         self.silent = silent
         print("Минимизируемый функционал:", self.input_func_str)
         print("Ограничения на множество:")
-        for i in range(dimensions):
-            print("%f <= x_%i <= %f" %(self.limits[i][0], i, self.limits[i][1]))
+        #for i in range(len(start_point)):
+        #    print("%f <= x_%i <= %f" %(self.limits[i][0], i, self.limits[i][1]))
 
     def Gradient(self, point):
         grad = []
@@ -59,7 +64,7 @@ class Functional():
             hess.append(partial_derivative)
         return np.array(hess)
 
-    def FindMin(self, a = 0.0, c = 1.0, flt_num = 3, precision = 1000000): # метод покрытий для минимизации ф-ии одной переменной
+    def FindMin(self, a = 0.0, c = 1.0, flt_num = 3, precision = 1000): # метод покрытий для минимизации ф-ии одной переменной
         eps = (0.01)**flt_num
         delta = (c - a)/precision
         x = a + eps
@@ -69,30 +74,97 @@ class Functional():
             x += delta
         return a + eps + delta*values.index(min(values)), min(values)
 
+        #delta = 0.1
+        #a_cap = 1
+        #while self.func(self.u_k + a_cap*(self.u_k_line - self.u_k)) >= self.func(self.u_k):
+        #    a_cap *= delta
+        #return a_cap, self.func(self.u_k + a_cap*(self.u_k_line - self.u_k))
 
 
-    def Optimize(self, flt_num = 3): # вычисляет оптимальную точку
-        eps = (0.1)**flt_num
-        coefs = self.Gradient(self.u_k)
-        self.u_k_line = np.array([self.limits[i][int(coefs[i] <= 0)] for i in range(len(self.limits))])
+
+    def Optimize(self, textbox, axes, plotbox, flt_num = 3): # вычисляет оптимальную точку
+        eps = (0.1)**(flt_num)
+        #coefs = self.Gradient(self.u_k)
+        #self.u_k_line = np.array([self.limits[i][int(coefs[i] <= 0)] for i in range(len(self.limits))])
+        #self.u_k_line = self.sph_center - sqrt(self.sph_rad)*self.Gradient(self.u_k)/LA.norm(self.Gradient(self.u_k))
+        self.u_k_line = self.sph_center - sqrt(self.sph_rad)*self.Gradient(self.u_k)/sqrt(np.dot(self.Gradient(self.u_k), self.Gradient(self.u_k)))
+        #print(self.u_k_line)
+        #print(self.sph_center.tolist())
         self.alpha_k = self.FindMin()[0]
         u_k_next = (self.u_k + self.alpha_k*(self.u_k_line - self.u_k)).tolist()
+        step = 1
+        func_vals = [self.func(self.u_k)]
         if self.silent == 0:
-            print("\nТекущее значение u_k:", self.u_k)
-            print("Текущее значение u_k_с_чертой:", self.u_k_line)
-            print("Текущее значение alpha_k:", self.alpha_k)
-            print("Текущее значение u_k+1:", u_k_next)
-        while round(LA.norm(np.array(u_k_next) - self.u_k), flt_num) >= eps:
+            #print("\nТекущее значение u_k:", self.u_k)
+            #print("Текущее значение u_k_с_чертой:", self.u_k_line)
+            #print("Текущее значение alpha_k:", self.alpha_k)
+            #print("Текущее значение u_k+1:", u_k_next)
+            textbox.insert(INSERT, "Итерация ")
+            textbox.insert(INSERT, step)
+            textbox.insert(INSERT, "\n")
+            textbox.insert(INSERT, self.u_k)
+            textbox.insert(INSERT, "\n")
+            textbox.insert(INSERT, self.u_k_line)
+            textbox.insert(INSERT, "\n")
+            textbox.insert(INSERT, self.alpha_k)
+            textbox.insert(INSERT, "\n")
+            textbox.insert(INSERT, u_k_next)
+            textbox.insert(INSERT, "\n")
+            textbox.insert(INSERT, "\n")
+            textbox.update_idletasks()
+        while abs(self.func(np.array(u_k_next)) - self.func(self.u_k)) >= eps:
+        #while LA.norm(np.array(u_k_next) - self.u_k) >= eps:
+            step += 1
             self.u_k = u_k_next
-            coefs = self.Gradient(self.u_k)
-            self.u_k_line = np.array([self.limits[i][int(coefs[i] <= 0)] for i in range(len(self.limits))])
+            func_vals.append(self.func(self.u_k))
+            #coefs = self.Gradient(self.u_k)
+            #self.u_k_line = self.sph_center - sqrt(self.sph_rad)*self.Gradient(self.u_k)/LA.norm(self.Gradient(self.u_k))
+            self.u_k_line = self.sph_center - sqrt(self.sph_rad)*self.Gradient(self.u_k)/sqrt(np.dot(self.Gradient(self.u_k), self.Gradient(self.u_k)))
             self.alpha_k = self.FindMin()[0]
             u_k_next = (self.u_k + self.alpha_k*(self.u_k_line - self.u_k)).tolist()
+
+            axes.cla()
+            axes.set_ylim([0.0 , max(func_vals)]) 
+            axes.grid()
+            #axes.set_xlim(min(func_vals), max(func_vals))
+            
+            axes.plot(range(1, step + 1), func_vals, color = 'purple')
+            plotbox.draw()
+
             if self.silent == 0:
-                print("\nТекущее значение u_k:", self.u_k)
-                print("Текущее значение u_k_с_чертой:", self.u_k_line)
-                print("Текущее значение alpha_k:", self.alpha_k)
-                print("Текущее значение u_k+1:", u_k_next)
-        print("\nОптимизация завершена")
-        print("Минимальное знаение функционала:", self.func(u_k_next))
-        print("Точка минимума:", u_k_next)
+                #print("\nТекущее значение u_k:", self.u_k)
+                #print("Текущее значение u_k_с_чертой:", self.u_k_line)
+                #print("Текущее значение alpha_k:", self.alpha_k)
+                #print("Текущее значение u_k+1:", u_k_next)
+                textbox.insert(INSERT, "Итерация ")
+                textbox.insert(INSERT, step)
+                textbox.insert(INSERT, "\n")
+                textbox.insert(INSERT, self.u_k)
+                textbox.insert(INSERT, "\n")
+                textbox.insert(INSERT, self.u_k_line)
+                textbox.insert(INSERT, "\n")
+                textbox.insert(INSERT, self.alpha_k)
+                textbox.insert(INSERT, "\n")
+                textbox.insert(INSERT, u_k_next)
+                textbox.insert(INSERT, "\n")
+                textbox.insert(INSERT, "\n")
+                textbox.update_idletasks()
+        #print("\nОптимизация завершена")
+        #print("Минимальное знаение функционала:", self.func(u_k_next))
+        #print("Точка минимума:", u_k_next)
+        func_vals.append(self.func(u_k_next))
+        print(func_vals)
+
+        axes.cla()
+        axes.set_ylim([0.0 , max(func_vals)]) 
+        axes.grid()
+        axes.plot(range(1, step + 2), func_vals, color = 'purple')
+        plotbox.draw()
+
+        textbox.insert(INSERT, "Оптимизация завершена\n")
+        textbox.insert(INSERT, "Минимальное знаение функционала: ")
+        textbox.insert(INSERT, self.func(u_k_next))
+        textbox.insert(INSERT, "\n")
+        textbox.insert(INSERT, "Точка минимума: ")
+        textbox.insert(INSERT, u_k_next)
+        textbox.update_idletasks()
