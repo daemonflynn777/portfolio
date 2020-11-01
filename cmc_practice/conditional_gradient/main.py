@@ -13,19 +13,29 @@ def clicked():
 	ax.cla()
 	ax.grid()
 	graph.draw()
+
+	center = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+	radius = 363
+
 	if len(txt2.get()) != 0:
-		center = list(map(float, txt2.get().split()))
+		precision = float(txt2.get())
 	else:
-		center = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+		precision = 0.001
+	
 	if len(txt3.get()) != 0:
-		radius = float(txt3.get())
+		m_iter = float(txt3.get())
 	else:
-		radius = 363
-	print(radius)
-	start_point = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+		m_iter = 1000
+
+	if chk4_state.get() == 1 or len(txt4.get()) == 0:
+		start_point = np.array([np.random.uniform(sqrt(2*(radius))/2.0, 1) for i in range(len(center))]).reshape(len(center))
+	else:
+		start_point = list(map(float, txt4.get().split()))
+
+	#start_point = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 	#start_point = np.array([np.random.uniform(sqrt(2*(radius))/2.0, 1) for i in range(len(center))]).reshape(len(center))
 	funct = cd.Functional(lambda x: 150*((x[1] - x[0])**4 + (x[2] - 2*x[0])**4 + (x[3] - 3*x[0])**4 + (x[4] - 4*x[0])**4 + (x[5] - 5*x[0])**4) + (x[0] - 2)**4,
-	                  center, 363, start_point,
+	                  center, 363, start_point, precision, m_iter,
 	                  func_to_str, silent = 0)
 	scroll_txt.delete(1.0, END)
 	funct.Optimize(scroll_txt, ax, graph)
@@ -46,21 +56,24 @@ lbl2 = Label(window, text = "Точность", font = ("Arial", 14))
 lbl2.grid(column = 1, row = 0, sticky = 'W')
 txt2 = Entry(window, width = 15)
 txt2.configure(background = 'LightSteelBlue4')
+txt2.insert(0, '0.01')
 txt2.grid(column = 1, row = 0)
 
 lbl3 = Label(window, text = "Макс. итерации", font = ("Arial", 14))
 lbl3.grid(column = 1, row = 1, sticky = 'W')
 txt3 = Entry(window, width = 15)
 txt3.configure(background = 'LightSteelBlue4')
+txt3.insert(0, '500')
 txt3.grid(column = 1, row = 1)
 
 lbl4 = Label(window, text = "Начальная точка", font = ("Arial", 14))
 lbl4.grid(column = 1, row = 2, sticky = 'W')
 txt4 = Entry(window, width = 15)
 txt4.configure(background = 'LightSteelBlue4')
+txt4.insert(0, '0 0 0 0 0 0')
 txt4.grid(column = 1, row = 2)
-chk4_state = BooleanVar()
-chk4_state.set(True)
+chk4_state = IntVar()
+chk4_state.set(1)
 chk4 = Checkbutton(window, text = "Задать автоматически", var = chk4_state)
 chk4.grid(column = 1, row = 2, sticky = 'E')
 

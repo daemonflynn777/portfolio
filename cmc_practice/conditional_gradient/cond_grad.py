@@ -7,7 +7,7 @@ from tkinter import scrolledtext
 
 
 class Functional():
-    def __init__(self, input_func, sphere_center, sphere_rad, start_point, input_func_str = "функция многих переменных", silent = 1):
+    def __init__(self, input_func, sphere_center, sphere_rad, start_point, tol, max_iter, input_func_str = "функция многих переменных", silent = 1):
         self.func = input_func
         #self.func1d = input_func1d
         self.input_func_str = input_func_str
@@ -16,6 +16,8 @@ class Functional():
         self.u_k = np.array(start_point) # начальная точка, каждая координата которой удовлетворяет ограничениям на множество
         self.u_k_line = np.zeros(len(start_point)).tolist()
         self.alpha_k = 0
+        self.precision = tol
+        self.max_iter = max_iter
         self.silent = silent
         print("Минимизируемый функционал:", self.input_func_str)
         print("Ограничения на множество:")
@@ -64,15 +66,16 @@ class Functional():
             hess.append(partial_derivative)
         return np.array(hess)
 
-    def FindMin(self, a = 0.0, c = 1.0, flt_num = 3, precision = 1000): # метод покрытий для минимизации ф-ии одной переменной
-        eps = (0.01)**flt_num
+    def FindMin(self, a = 0.0, c = 1.0, precision = 10000): # метод покрытий для минимизации ф-ии одной переменной
+        #eps = (0.01)**self.precision
+        eps = self.precision**2
         delta = (c - a)/precision
-        x = a + eps
+        x = a
         values = []
-        while x <= c - eps:
+        while x <= c:
             values.append(self.func(self.u_k + x*(self.u_k_line - self.u_k)))
             x += delta
-        return a + eps + delta*values.index(min(values)), min(values)
+        return a + delta*values.index(min(values)), min(values)
 
         #delta = 0.1
         #a_cap = 1
@@ -82,17 +85,19 @@ class Functional():
 
 
 
-    def Optimize(self, textbox, axes, plotbox, flt_num = 3): # вычисляет оптимальную точку
-        eps = (0.1)**(flt_num)
+    def Optimize(self, textbox, axes, plotbox): # вычисляет оптимальную точку
+        #eps = (0.1)**(self.precision)
+        eps = self.precision
         #coefs = self.Gradient(self.u_k)
         #self.u_k_line = np.array([self.limits[i][int(coefs[i] <= 0)] for i in range(len(self.limits))])
-        #self.u_k_line = self.sph_center - sqrt(self.sph_rad)*self.Gradient(self.u_k)/LA.norm(self.Gradient(self.u_k))
-        self.u_k_line = self.sph_center - sqrt(self.sph_rad)*self.Gradient(self.u_k)/sqrt(np.dot(self.Gradient(self.u_k), self.Gradient(self.u_k)))
+        self.u_k_line = self.sph_center - sqrt(self.sph_rad)*self.Gradient(self.u_k)/LA.norm(self.Gradient(self.u_k))
+        step = 1
+        #self.u_k_line = self.sph_center - sqrt(self.sph_rad)*self.Gradient(self.u_k)/sqrt(np.dot(self.Gradient(self.u_k), self.Gradient(self.u_k)))
         #print(self.u_k_line)
         #print(self.sph_center.tolist())
         self.alpha_k = self.FindMin()[0]
+        #elf.alpha_k = 2.0/(step + 2.0)
         u_k_next = (self.u_k + self.alpha_k*(self.u_k_line - self.u_k)).tolist()
-        step = 1
         func_vals = [self.func(self.u_k)]
         if self.silent == 0:
             #print("\nТекущее значение u_k:", self.u_k)
@@ -112,14 +117,15 @@ class Functional():
             textbox.insert(INSERT, "\n")
             textbox.insert(INSERT, "\n")
             textbox.update_idletasks()
-        while abs(self.func(np.array(u_k_next)) - self.func(self.u_k)) >= eps:
+        while (abs(self.func(np.array(u_k_next)) - self.func(self.u_k)) >= eps) and (step < self.max_iter):
         #while LA.norm(np.array(u_k_next) - self.u_k) >= eps:
             step += 1
             self.u_k = u_k_next
             func_vals.append(self.func(self.u_k))
             #coefs = self.Gradient(self.u_k)
-            #self.u_k_line = self.sph_center - sqrt(self.sph_rad)*self.Gradient(self.u_k)/LA.norm(self.Gradient(self.u_k))
-            self.u_k_line = self.sph_center - sqrt(self.sph_rad)*self.Gradient(self.u_k)/sqrt(np.dot(self.Gradient(self.u_k), self.Gradient(self.u_k)))
+            self.u_k_line = self.sph_center - sqrt(self.sph_rad)*self.Gradient(self.u_k)/LA.norm(self.Gradient(self.u_k))
+            #self.u_k_line = self.sph_center - sqrt(self.sph_rad)*self.Gradient(self.u_k)/sqrt(np.dot(self.Gradient(self.u_k), self.Gradient(self.u_k)))
+            #self.alpha_k = 2.0/(step + 2.0)
             self.alpha_k = self.FindMin()[0]
             u_k_next = (self.u_k + self.alpha_k*(self.u_k_line - self.u_k)).tolist()
 
