@@ -8,8 +8,6 @@ from matplotlib.figure import Figure
 from math import sqrt
 
 def clicked():
-	#start_point = np.array([np.random.uniform(input_lims[i][0], input_lims[i][1], 1) for i in range(dimensions)]).reshape(dimensions)
-	#start_point = [1.0, 1.0, 1.0]
 	ax.cla()
 	ax.grid()
 	graph.draw()
@@ -32,10 +30,8 @@ def clicked():
 	else:
 		start_point = list(map(float, txt4.get().split()))
 
-	#start_point = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-	#start_point = np.array([np.random.uniform(sqrt(2*(radius))/2.0, 1) for i in range(len(center))]).reshape(len(center))
 	funct = cd.Functional(lambda x: 150*((x[1] - x[0])**4 + (x[2] - 2*x[0])**4 + (x[3] - 3*x[0])**4 + (x[4] - 4*x[0])**4 + (x[5] - 5*x[0])**4) + (x[0] - 2)**4,
-	                  center, 363, start_point, precision, m_iter,
+	                  center, radius, start_point, precision, m_iter,
 	                  func_to_str, silent = 0)
 	scroll_txt.delete(1.0, END)
 	funct.Optimize(scroll_txt, ax, graph)
