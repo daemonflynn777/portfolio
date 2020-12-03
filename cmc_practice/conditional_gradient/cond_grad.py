@@ -64,7 +64,7 @@ class Functional():
         return np.array(hess)
 
     def FindMin(self, a = 0.0, c = 1.0, precision = 10000): # метод покрытий для минимизации ф-ии одной переменной
-        eps = self.precision**2
+        eps = self.precision**1
         delta = (c - a)/precision
         x = a
         values = []
@@ -73,9 +73,10 @@ class Functional():
             x += delta
         return a + delta*values.index(min(values)), min(values)
 
-    def Optimize(self, textbox, axes, plotbox): # вычисляет оптимальную точку
+    def Optimize(self, textbox = None, axes = None, plotbox = None): # вычисляет оптимальную точку
 
         clmns = ["alpha_k"] + [f"x_k_{i}" for i in range(len(self.sph_center))] + [f"x_k_line_{i}" for i in range(len(self.sph_center))] + ["f_k"]
+        u_k_first = self.u_k.tolist()
 
         step = 1
         eps = self.precision
@@ -88,39 +89,7 @@ class Functional():
         u_k_next = (self.u_k + self.alpha_k*(self.u_k_line - self.u_k)).tolist()
         func_vals = [self.func(self.u_k)]
         if self.silent == 0:
-            textbox.insert(INSERT, "Итерация ")
-            textbox.insert(INSERT, step)
-            textbox.insert(INSERT, "\n")
-            textbox.insert(INSERT, self.u_k)
-            textbox.insert(INSERT, "\n")
-            textbox.insert(INSERT, self.u_k_line)
-            textbox.insert(INSERT, "\n")
-            textbox.insert(INSERT, self.alpha_k)
-            textbox.insert(INSERT, "\n")
-            textbox.insert(INSERT, u_k_next)
-            textbox.insert(INSERT, "\n")
-            textbox.insert(INSERT, "\n")
-            textbox.update_idletasks()
-        while (abs(self.func(np.array(u_k_next)) - self.func(self.u_k)) >= eps) and (step < self.max_iter):
-            step += 1
-            self.u_k = u_k_next
-            func_vals.append(self.func(self.u_k))
-            self.u_k_line = self.sph_center - sqrt(self.sph_rad)*self.Gradient(self.u_k)/LA.norm(self.Gradient(self.u_k))
-            self.alpha_k = self.FindMin()[0]
-
-            iter_data = [self.alpha_k] + self.u_k + self.u_k_line.tolist() + [self.func(self.u_k)]
-            df_data.append(iter_data)
-
-            u_k_next = (self.u_k + self.alpha_k*(self.u_k_line - self.u_k)).tolist()
-
-            axes.cla()
-            axes.set_ylim([0.0 , max(func_vals)]) 
-            axes.grid()
-            
-            axes.plot(range(1, step + 1), func_vals, color = 'purple')
-            plotbox.draw()
-
-            if self.silent == 0:
+            if textbox is not None:
                 textbox.insert(INSERT, "Итерация ")
                 textbox.insert(INSERT, step)
                 textbox.insert(INSERT, "\n")
@@ -134,6 +103,40 @@ class Functional():
                 textbox.insert(INSERT, "\n")
                 textbox.insert(INSERT, "\n")
                 textbox.update_idletasks()
+        while (abs(self.func(np.array(u_k_next)) - self.func(self.u_k)) >= eps) and (step < self.max_iter):
+            step += 1
+            self.u_k = u_k_next
+            func_vals.append(self.func(self.u_k))
+            self.u_k_line = self.sph_center - sqrt(self.sph_rad)*self.Gradient(self.u_k)/LA.norm(self.Gradient(self.u_k))
+            self.alpha_k = self.FindMin()[0]
+
+            iter_data = [self.alpha_k] + self.u_k + self.u_k_line.tolist() + [self.func(self.u_k)]
+            df_data.append(iter_data)
+
+            u_k_next = (self.u_k + self.alpha_k*(self.u_k_line - self.u_k)).tolist()
+
+            if (axes is not None) and (plotbox is not None):
+                axes.cla()
+                axes.set_ylim([0.0 , max(func_vals)]) 
+                axes.grid()
+                axes.plot(range(1, step + 1), func_vals, color = 'purple')
+                plotbox.draw()
+
+            if self.silent == 0:
+                if textbox is not None:
+                    textbox.insert(INSERT, "Итерация ")
+                    textbox.insert(INSERT, step)
+                    textbox.insert(INSERT, "\n")
+                    textbox.insert(INSERT, self.u_k)
+                    textbox.insert(INSERT, "\n")
+                    textbox.insert(INSERT, self.u_k_line)
+                    textbox.insert(INSERT, "\n")
+                    textbox.insert(INSERT, self.alpha_k)
+                    textbox.insert(INSERT, "\n")
+                    textbox.insert(INSERT, u_k_next)
+                    textbox.insert(INSERT, "\n")
+                    textbox.insert(INSERT, "\n")
+                    textbox.update_idletasks()
         print("Оптимизация завершена", "\nПосмотреть результаты можно в Excel-файле\n")
         func_vals.append(self.func(u_k_next))
 
@@ -143,16 +146,19 @@ class Functional():
         except:
             pass
 
-        axes.cla()
-        axes.set_ylim([0.0 , max(func_vals)]) 
-        axes.grid()
-        axes.plot(range(1, step + 2), func_vals, color = 'purple')
-        plotbox.draw()
+        if (axes is not None) and (plotbox is not None) and (textbox is not None):
+            axes.cla()
+            axes.set_ylim([0.0 , max(func_vals)]) 
+            axes.grid()
+            axes.plot(range(1, step + 2), func_vals, color = 'purple')
+            plotbox.draw()
 
-        textbox.insert(INSERT, "Оптимизация завершена\n")
-        textbox.insert(INSERT, "Минимальное знаение функционала: ")
-        textbox.insert(INSERT, self.func(u_k_next))
-        textbox.insert(INSERT, "\n")
-        textbox.insert(INSERT, "Точка минимума: ")
-        textbox.insert(INSERT, u_k_next)
-        textbox.update_idletasks()
+            textbox.insert(INSERT, "Оптимизация завершена\n")
+            textbox.insert(INSERT, "Минимальное знаение функционала: ")
+            textbox.insert(INSERT, self.func(u_k_next))
+            textbox.insert(INSERT, "\n")
+            textbox.insert(INSERT, "Точка минимума: ")
+            textbox.insert(INSERT, u_k_next)
+            textbox.update_idletasks()
+
+        return u_k_first + u_k_next + [func_vals[len(func_vals) - 1]] + [step]
