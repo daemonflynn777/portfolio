@@ -40,13 +40,14 @@ class TSP():
         #pos3 = positions[2]
         #np.random.shuffle(tmp_point)
         #tmp_point[[min(pos1, pos2) : max(pos1, pos2)]] = np.flip(tmp_point[min(pos1, pos2) : max(pos1, pos2)])
-        tmp_point1 = tmp_point[ : min(pos1, pos2)]
-        tmp_point2 = np.flip(tmp_point[min(pos1, pos2) : max(pos1, pos2)])
-        tmp_point3 = tmp_point[max(pos1, pos2) : ]
-        tmp_point = np.append(tmp_point1, tmp_point2)
-        tmp_point = np.append(tmp_point, tmp_point3)
+        #tmp_point1 = tmp_point[ : min(pos1, pos2)]
+        #tmp_point2 = np.flip(tmp_point[min(pos1, pos2) : max(pos1, pos2)])
+        #tmp_point3 = tmp_point[max(pos1, pos2) : ]
+        #tmp_point = np.append(tmp_point1, tmp_point2)
+        #tmp_point = np.append(tmp_point, tmp_point3)
         #tmp_point = np.roll(tmp_point, 13)
         #tmp_point = np.flip(tmp_point)
+        tmp_point[[pos1, pos2]] = tmp_point[[pos2, pos1]]
         return tmp_point
 
     def __get_probability(self, curr_point, next_point, iteration): #вычисляем вероятность принятия следующей последовательности гоордов (закрытый метод класса)
@@ -58,22 +59,26 @@ class TSP():
     def OptimizeRoute(self): #поиск оптимальной последовательности городов
         iteration = 1
         initial_point = self.start_point
-        curr_point = self.start_point.copy()
-        next_point = self.__generate_next_point(curr_point)
-        probability = self.__get_probability(curr_point, next_point, iteration)
+        #curr_point = self.start_point.copy()
+        #next_point = self.__generate_next_point(curr_point)
+        next_point = self.start_point.copy()
+        #probability = self.__get_probability(curr_point, next_point, iteration)
         while self.__temperature_decrease(iteration) >= self.T_min:
-            print(probability)
-            if probability < 1.0:
-                ksi = abs(np.random.normal(0.0, 0.1, 1)[0])
-                if ksi > probability:
-                    print(iteration)
-                    #next_point = curr_point.copy()
-                    break
-            iteration += 1
             curr_point = next_point.copy()
             next_point = self.__generate_next_point(curr_point)
             probability = self.__get_probability(curr_point, next_point, iteration)
-        self.end_point = curr_point.copy()
+            print(probability)
+            if probability < 1.0:
+                ksi = abs(np.random.uniform(-1.0, 1.0, 1)[0])
+                if ksi >= probability:
+                    print(iteration)
+                    next_point = curr_point.copy()
+                    #break
+            iteration += 1
+            #curr_point = next_point.copy()
+            #next_point = self.__generate_next_point(curr_point)
+            #probability = self.__get_probability(curr_point, next_point, iteration)
+        self.end_point = next_point.copy()
         print("Конечная последовательность городов:", self.end_point)
         print("Исходное суммарное расстояние:", self.__objective_function(initial_point))
         print("Конечное суммарное расстояние:", self.__objective_function(self.end_point))
@@ -88,7 +93,7 @@ class TSP():
         plt.subplot(1, 3, 3)
         plt.scatter(self.cities[0], self.cities[1])
         plt.plot(end_matrix[0], end_matrix[1])
-        #plt.show()
+        plt.show()
 
     def test(self):
         self.__generate_next_point(self.start_point)
