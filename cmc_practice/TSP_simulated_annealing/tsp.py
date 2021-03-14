@@ -38,7 +38,7 @@ class TSP():
         np.random.shuffle(self.start_point)
         self.T_max = 1000
         self.T_min = 0.01
-        self.max_iter_no_change = self.cities.shape[1]*(self.cities.shape[1] - 1)/2
+        self.max_iter_no_change = self.T_max*self.cities.shape[1]*(self.cities.shape[1] - 1)/2
 
     def __objective_function(self, cities_order): #целевая функция суммарного расстояния между текущей последовательностью городов (закрытый метод класса)
         distance = 0.0
@@ -83,6 +83,8 @@ class TSP():
                     iter_no_change += 1
             if (curr_point != next_point).all():
                 iter_no_change = 0
+            if iter_no_change == self.max_iter_no_change:
+                break
             iteration += 1
         self.end_point = next_point.copy()
         print("Конечная последовательность городов:", self.end_point)
