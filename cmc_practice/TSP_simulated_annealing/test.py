@@ -18,7 +18,7 @@ def TestTSP():
     print("Test 3 passed.\n")
 
     cities_array = np.array([[2.28 , 6.66, 8.34, 4.04], [1.5, 7.2, 5.2, 9.9]])
-    tsp_test = tsp.TSP(cities_list)
+    tsp_test = tsp.TSP(cities_array)
     tsp_test.OptimizeRoute()
     print("Test 4 passed.\n")
 

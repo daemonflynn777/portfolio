@@ -2,7 +2,6 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 import io
-import numbers
 
 class TSP():
     def __init__(self, cities_input = 10):
