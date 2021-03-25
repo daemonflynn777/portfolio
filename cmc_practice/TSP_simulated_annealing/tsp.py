@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import io
 
 class TSP():
-    def __init__(self, cities_input = 10):
+    def __init__(self, cities_input = 50):
         if isinstance(cities_input, int):
             if cities_input >= 2:
                 self.cities = np.random.uniform(0.0, 1.0, (2, cities_input))*10 #cities[0] - координата X, cities[1] - координата Y
