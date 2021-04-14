@@ -36,7 +36,7 @@ class EconModel():
         Объединение нормативов (параметров)
         для всех остальных временных рядов
         '''
-        self.parameters = ["target", "a_X_XL", "a_X_XO", "b_X_XK", "mu_K_X", "b_L_XL", "a_L_X", "b_X_GX", "b_M_LO"]
+        self.parameters = ["target", "a_X_XL", "a_X_XO", "b_X_XK", "mu_K_X", "b_L_XL", "a_L_X", "b_X_GX", "b_M_LO", "b_Z_XB"]
 
         '''
         Создадим датасет для идентификации
@@ -47,8 +47,9 @@ class EconModel():
         self.Q_X_Dataset['a_X_XL'] = self.aggregated_data_df['Q_X']
         self.Q_X_Dataset['a_X_XO'] = self.aggregated_data_df['Q_X']
         self.Q_X_Dataset['b_X_XK'] = self.aggregated_data_df['W_X'] / self.aggregated_data_df['p_X_X']
-        for label in self.parameters - ['target', 'a_X_XL', 'a_X_XO', 'b_X_XK']:
+        for label in  [x for x in self.parameters if x not in ['target', 'a_X_XL', 'a_X_XO', 'b_X_XK']]:
             self.Q_X_Dataset[label] = 0
+        self.Q_X_Dataset = self.Q_X_Dataset[ : -1]
 
         '''
         Создадим датасет для идентификации
@@ -58,8 +59,9 @@ class EconModel():
         self.Q_K_Dataset['target'] = self.aggregated_data_df['dQ_K']
         self.Q_K_Dataset['b_X_XK'] = self.aggregated_data_df['W_X'] / self.aggregated_data_df['p_X_X']
         self.Q_K_Dataset['mu_K_X'] = self.aggregated_data_df['Q_K'] * (-1)
-        for label in self.parameters - ['target', 'b_X_XK', 'mu_K_X']:
+        for label in [x for x in self.parameters if x not in ['target', 'b_X_XK', 'mu_K_X']]:
             self.Q_K_Dataset[label] = 0
+        self.Q_K_Dataset = self.Q_K_Dataset[ : -1]
         
         '''
         Создадим датасет для идентификации
@@ -69,29 +71,32 @@ class EconModel():
         self.Q_L_Dataset['target'] = self.aggregated_data_df['dQ_L']
         self.Q_L_Dataset['b_L_XL'] = self.aggregated_data_df['W_X'] / self.aggregated_data_df['s_L_X']
         self.Q_L_Dataset['a_L_X'] = self.aggregated_data_df['Q_L'] * (-1)
-        for label in self.parameters - ['target', 'b_L_XL', 'a_L_X']:
+        for label in [x for x in self.parameters if x not in ['target', 'b_L_XL', 'a_L_X']]:
             self.Q_L_Dataset[label] = 0
+        self.Q_L_Dataset = self.Q_L_Dataset[ : -1]
 
         '''
         Создадим датасет для идентификации
         параметров изменения запаса денег
         в производственном секторе (W_X)
         '''
-        self.W_X_dataset = pd.DataFrame(data = np.zeros((20, len(self.parameters))), columns = self.parameters)
+        self.W_X_Dataset = pd.DataFrame(data = np.zeros((20, len(self.parameters))), columns = self.parameters)
         n_1 = self.aggregated_data_df['n_1']
         n_2 = self.aggregated_data_df['n_2']
         n_4 = self.aggregated_data_df['n_4']
         n_5 = self.aggregated_data_df['n_5']
-        self.W_X_Dataset['target'] = self.aggregated_data_df['dW_X'] - (self.aggregated_data_df['T_GX'] + self.aggregated_data_df['C_BX'])
-        self.W_X_Dataset['a_X_XL'] = (self.aggregated_data_df['p_X_L']*self.aggregated_data_df['Q_X_X'])*\
+        self.W_X_Dataset['target'] = self.aggregated_data_df['dW_X'] - self.aggregated_data_df['C_BX']
+        self.W_X_Dataset['a_X_XL'] = (self.aggregated_data_df['p_X_L']*self.aggregated_data_df['Q_X'])*\
                                         (1 - self.aggregated_data_df['n_2'] - self.aggregated_data_df['n_1'] +\
                                         self.aggregated_data_df['n_1']*self.aggregated_data_df['n_2'])
         self.W_X_Dataset['a_X_XO'] = self.aggregated_data_df['p_X_O']*self.aggregated_data_df['Q_X']*(1 - n_1 - n_2 - n_5 - n_1*n_2*n_5 +\
                                                                                                       n_1*n_5 + n_2*n_5 + n_1*n_2)
         self.W_X_Dataset['b_L_XL'] = self.aggregated_data_df['W_X'] * (n_1 + n_2*n_4 + n_1*n_4 - n_4 - n_1*n_2*n_4 - 1)
-        self.W_X_Dataset['b_X_GX'] = self.aggregated_data_df['W_G']*(n_1 + n_2 - n_1*n_2)
-        for label in self.parameters - ['target', 'a_X_XL', 'a_X_XO', 'b_L_XL', 'b_X_GX']:
+        self.W_X_Dataset['b_X_GX'] = self.aggregated_data_df['W_X']*(n_1 + n_2 - n_1*n_2)
+        self.W_X_Dataset['b_X_GX'] = self.aggregated_data_df['W_G']
+        for label in [x for x in self.parameters if x not in ['target', 'a_X_XL', 'a_X_XO', 'b_L_XL', 'b_X_GX']]:
             self.W_X_Dataset[label] = 0
+        self.W_X_Dataset = self.W_X_Dataset[ : -1]
 
         '''
         Создадим датасет для идентификации
@@ -104,8 +109,9 @@ class EconModel():
                                      self.aggregated_data_df['p_X_O']*self.aggregated_data_df['Q_X']
         self.Z_X_Dataset['b_M_LO'] = (self.aggregated_data_df['ksi'] - 1)*(1/self.aggregated_data_df['ksi'])*self.aggregated_data_df['W_L']
         self.Z_X_Dataset['b_Z_XB'] = self.aggregated_data_df['W_X'] * (-1)
-        for label in self.parameters - ['target', 'a_X_XO', 'b_M_LO', 'b_Z_XB']:
+        for label in [x for x in self.parameters if x not in ['target', 'a_X_XO', 'b_M_LO', 'b_Z_XB']]:
             self.Z_X_Dataset[label] = 0
+        self.Z_X_Dataset = self.Z_X_Dataset[ : -1]
 
         '''
         Создадим датасет для идентификации
@@ -129,12 +135,13 @@ class EconModel():
         self.W_G_Dataset['b_M_LO'] = n_6*self.aggregated_data_df['W_L']
         self.W_G_Dataset['a_X_XO'] = self.aggregated_data_df['w']*self.aggregated_data_df['p_X_O']*self.aggregated_data_df['Q_X']*\
                                      (n_1 + n_2 + n_5 + n_1*n_2*n_5 - n_1*n_2 - n_1*n_5 - n_2*n_5)
-        self.W_G_Dataset['b_L_XL'] = self.aggregated_data_df['W_X']*(n_4 - n_1*n_4 + n1*n_2*n_4 - n_1 - n_2*n_4)
+        self.W_G_Dataset['b_L_XL'] = self.aggregated_data_df['W_X']*(n_4 - n_1*n_4 + n_1*n_2*n_4 - n_1 - n_2*n_4)
         self.W_G_Dataset['a_X_XL'] = self.aggregated_data_df['p_X_L']*self.aggregated_data_df['Q_X']*\
-                                     (n_1 + n_2 + n_3 + n_1*n_2*n_3 - n_1*n_2 - n_2*n_3 - n_1*n_3)
+                                     (n_1 + n_2 - n_1*n_2)
         self.W_G_Dataset['b_Z_XB'] = self.aggregated_data_df['W_X']*(n_1*n_2 - n_1 - n_2)
-        for label in self.parameters - ['target', 'b_M_LO', 'a_X_XO', 'b_L_XL', 'a_X_XL', 'b_Z_XB']:
+        for label in [x for x in self.parameters if x not in ['target', 'b_M_LO', 'a_X_XO', 'b_L_XL', 'a_X_XL', 'b_Z_XB']]:
             self.W_G_Dataset[label] = 0
+        self.W_G_Dataset = self.W_G_Dataset[ : -1]
 
         '''
         Создадим датасет для идентификации
@@ -145,11 +152,70 @@ class EconModel():
         self.R_Dataset['target'] = self.aggregated_data_df['dR']
         self.R_Dataset['a_X_XO'] = self.aggregated_data_df['p_X_O']*self.aggregated_data_df['Q_X']
         self.R_Dataset['b_M_LO'] = self.aggregated_data_df['W_L'] / self.aggregated_data_df['w_hat']
-        for label in self.parameters - ['target', 'a_X_XO', 'b_M_LO']:
+        for label in [x for x in self.parameters if x not in ['target', 'a_X_XO', 'b_M_LO']]:
             self.R_Dataset[label] = 0
+        self.R_Dataset = self.R_Dataset[ : -1]
 
-    def Optimize(self):
-        pass
+        self.FullDataset  = pd.concat([self.Q_X_Dataset, self.Q_K_Dataset, self.Q_L_Dataset, self.W_X_Dataset,\
+                                       self.Z_X_Dataset, self.W_G_Dataset, self.R_Dataset], ignore_index = True)
+        for i in list(self.FullDataset.index):
+            self.FullDataset.loc[i, : ] = self.FullDataset.loc[i, : ]/max(list(self.FullDataset.loc[i, : ]))
+            #print(self.FullDataset.loc[4, : ])
+        #print(self.FullDataset)
+
+        self.y = self.FullDataset[['target']].to_numpy().reshape(1, -1)[0]
+        self.X = self.FullDataset[self.parameters].to_numpy()
+        #print(self.y)
+
+    def __TargetFunction(self, point):
+        '''
+        Функция вычисления функционала
+        '''
+        return np.dot((np.dot(self.X, point)).T, np.dot(self.X, point)) - 2*np.dot((np.dot(self.X, point)).T, self.y) + np.dot(self.y, self.y)
+
+    def __TargetFunctionGradient(self, point):
+        '''
+        Функция вычилсения градиента функицонала
+        '''
+        return 2*np.dot(self.X.T, np.dot(self.X, point)) - 2*np.dot(self.X.T, self.y)
+
+    def __PointProjection(point):
+        '''
+        Функция вычисления проекции на допустимое множество
+        '''
+        return np.clip(point, 0, 1)
+
+    def __Armiho(self, point, alpha_hat = 5.0, teta = 0.8, eps = 0.001):
+        '''
+        Правило Армихо для одномерного поиска
+        '''
+        point_alpha = np.clip(point - alpha_hat*self.__TargetFunctionGradient(point), 0, 1)
+        while self.__TargetFunction(point_alpha) > self.__TargetFunction(point) + eps*np.dot(self.__TargetFunctionGradient(point), point_alpha - point):
+            alpha_hat *= teta
+            point_alpha = np.clip(point - alpha_hat*self.__TargetFunctionGradient(point), 0, 1)
+        return alpha_hat
+
+
+    def Optimize(self, eps = 0.000001, max_iter_no_change = 1000):
+        '''
+        Воспользуемся методом проекции градиента
+        для нахождения параметров, указанных в
+        self.parameters
+        '''
+        CurrPoint = np.random.standard_normal(len(self.parameters))
+        print(self.__TargetFunction(CurrPoint))
+        alpha = self.__Armiho(CurrPoint)
+        NextPoint = np.clip(CurrPoint - alpha*self.__TargetFunctionGradient(CurrPoint), 0, 1)
+        print(self.__TargetFunction(NextPoint))
+        while self.__TargetFunction(CurrPoint) - self.__TargetFunction(NextPoint) > eps:
+            print(self.__TargetFunction(NextPoint))
+            CurrPoint = NextPoint.copy()
+            alpha = self.__Armiho(CurrPoint)
+            NextPoint = np.clip(CurrPoint - alpha*self.__TargetFunctionGradient(CurrPoint), 0, 1)
+        print(NextPoint)
+        return NextPoint
+
 
 em = EconModel('Data/UK_dataset.xls')
 em.CreateDatasets()
+em.Optimize()
