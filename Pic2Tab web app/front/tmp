@@ -1,0 +1,18 @@
+<script type="text/javascript">
+    var perc_width = 45;
+    if (window.innerWidth > window.innerHeight) {
+        width_style = "width:"+String(perc_width)+"%;";
+        min_width_style = "min-width:"+String(0.3*window.screen.availWidth)+"px;";
+        document.getElementById("flex_elem").setAttribute("style", width_style+min_width_style);
+    } else {
+        perc_width = 85;
+        width_style = "width:"+String(perc_width)+"%;";
+        min_width_style = "min-width:"+String(0.3*window.screen.availWidth)+"px;";
+        document.getElementById("flex_elem").setAttribute("style", width_style+min_width_style);
+    }
+    /*document.getElementById("flex_elem").setAttribute("style", "min-width:"+String(45)+"%;");*/
+</script>
+
+input[type="file"] {
+    display: none;
+}

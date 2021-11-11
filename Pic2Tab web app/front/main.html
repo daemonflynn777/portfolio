@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Pic2Tab</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/styles.css') }}"/>
+        <!-- <link rel="stylesheet" type="text/css" href="../static/styles/styles.css"/> -->
+        <link rel="stylesheet" type="text/css" href="../static/styles/styles.css"/> 
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100;0,200;1,100;1,200&display=swap" rel="stylesheet">
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script language="JavaScript" type="text/javascript" src="{{ url_for('static', filename='js/script.js') }}"></script>
+    </head>
+    <body>
+        <div class="wrapper">
+            <div class="header">
+                <p class="main_title">Pic2Tab</p>
+                <p class="main_subtitle">Turn pictures into spreadsheets</p>
+            </div>
+            <div class="content" style="border: 0px solid black;">
+                <div class="submission" style="border: 0px solid red;">
+                    <div class="upload" id="flex_elem1">
+                        <form class="upload_container" method="POST" action="/", enctype="multipart/form-data">
+                            
+                            <div class="file-drop-area">
+                                <span class="fake-btn">Click to choose files</span>
+                                <span class="file-msg">or drag and drop files here</span>
+                                <input class="file-input" type="file" id="image" name="image" files>
+                            </div>
+                            <!--
+                            <div class="image_input">
+                                <input id="image" type="file" name="image" files>
+                                <label for="image" class="image_upload_label" id="image_upload_container">Drag your file here or click to select image</label>
+                            </div>
+                            -->
+
+                        <button type="submit" class="our_button">Submit Image</button>
+                        </form>
+
+                        <!--
+                        <div class="droparea">Drag your photo here</div>
+                        <button class="our_button" role="button">Upload Photo</button>
+                         -->
+                    </div>
+                    <div class="download" id="flex_elem2">
+                        
+                        <button class="our_button" role="button">Download .xlsx file</button>
+                    </div>
+                </div>
+                <div class="tutorial">
+
+                </div>
+            </div>
+            <footer class="footer">
+                <div class="footer_container">
+                    <div class="footer_element">
+                        Pic2Tab
+                    </div>
+                    <div class="footer_element">
+                        <p class="footer_text">
+                            Nick Denisov
+                            <br>
+                            <a href="mailto:nick777business@gmail.com?subject=Pic2Tab Question">nick777business@gmail.com</a>
+                        </p>
+                    </div>
+                    <div class="footer_element">
+                        All rights reserved
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </body>
+</html>
