@@ -1,0 +1,9 @@
+SELECT tab.Client_id, tab.Order_id
+FROM (
+    SELECT
+        Client id,
+        Order id,
+        ROW_NUMBER() OVER(PARTITION BY Client id ORDER BY DateTime) AS Order_num
+    FROM source_tab -- tab - условное название исходной таблицы
+) tab
+WHERE tab.Order_num = 1 or tab.Order_num = 5

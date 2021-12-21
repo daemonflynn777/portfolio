@@ -1,0 +1,60 @@
+WITH
+    Tab1 AS (
+        SELECT *
+        FROM source_tab -- условное название исходной таблицы
+        WHERE Client_id in (
+            SELECT DISTINCT TabTMP.Client_id
+            FROM (
+                SELECT Client_id, COUNT(*) AS CNT
+                FROM source_tab
+                GROUP BY Client_id
+                HAVING CNT > 1
+            ) TabTMP
+        )
+    ),
+
+    Tab2 AS (
+        SELECT
+            Hit_id,
+            Client_id,
+            Timestamp,
+            LAG(Timestamp) OVER(PARTITION BY Client_id ORDER BY Timestamp) AS TimestampLag,
+            Timestamp - COALESCE(TimestampLag, Timestamp) AS TimestampDeltaSeconds,
+            ROW_NUMBER() OVER(PARTITION BY Client_id ORDER BY Timestamp) AS Hit_num,
+            CASE
+                WHEN TimestampDeltaSeconds > 1800 THEN 1
+                ELSE 0
+            END AS NewSessionFlag
+        FROM Tab1
+    ),
+
+    Tab3 AS (
+        SELECT
+            Hit_id,
+            Client_id,
+            Timestamp,
+            Hit_num,
+            SUM(NewSessionFlag) OVER(PARTITION BY Client_id ORDER BY Timestamp ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS Hit_num_shift
+        FROM Tab2
+    ),
+
+    Tab4 AS (
+        SELECT
+            Hit_id,
+            Client_id,
+            Timestamp,
+            Hit_num + Hit_num_shift AS  Hit_num_shifted,
+            ROW_NUMBER() OVER(PARTITION BY Client_id ORDER BY Timestamp) AS row_num,
+            Hit_num_shifted - row_num AS Hit_num_final
+        FROM Tab3
+    )
+SELECT COUNT(DISTINCT Tab5.Client_id) AS SessionsCount
+FROM (
+    SELECT
+        Client_id,
+        Hit_num_final,
+        COUNT(*) AS CNT
+    FROM Tab4
+    GROUP BY Client_id, Hit_num_final
+    HAVING CNT > 1
+) Tab5

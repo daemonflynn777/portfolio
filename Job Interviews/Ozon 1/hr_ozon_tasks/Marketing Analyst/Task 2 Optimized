@@ -1,0 +1,31 @@
+WITH
+    Tab1 AS (
+        SELECT
+            Hit_id,
+            Client_id,
+            Timestamp,
+            LAG(Timestamp) OVER(PARTITION BY Client_id ORDER BY Timestamp) AS TimestampLag,
+            Timestamp - COALESCE(TimestampLag, Timestamp) AS TimestampDeltaSeconds,
+            CASE
+                WHEN TimestampDeltaSeconds > 1800 THEN 1
+                ELSE 0
+            END AS NewSessionFlag
+        FROM source_tab -- условное название исходной таблицы
+    ),
+
+    Tab2 AS (
+        SELECT
+        T.*,
+        SUM(NewSessionFlag) OVER(PARTITION BY Client_id ORDER BY Timestamp ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS FlagCumulativeSum
+        FROM Tab1 T
+    )
+SELECT COUNT(DISTINCT Tab3.Client_id) AS SessionsCount
+FROM (
+    SELECT
+        Client_id,
+        FlagCumulativeSum,
+        COUNT(*) AS CNT
+    FROM Tab2
+    GROUP BY Client_id, FlagCumulativeSum
+    HAVING CNT > 1
+) Tab3

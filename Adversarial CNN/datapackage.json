@@ -1,0 +1,47 @@
+{
+  "sources": [
+    {
+      "name": "Jose Llamas", 
+      "email": "joslla@cartif.es"
+    }
+  ], 
+  "description": "Architectural Heritage Elements Dataset (AHE) is an image dataset for developing deep learning algorithms and specific techniques in the classification of architectural heritage images. This dataset consists of 10235 images classified in 10 categories:\r\nAltar: 829 images; Apse: 514 images; Bell tower: 1059 images; Column: 1919 images; Dome (inner): 616 images; Dome (outer): 1177 images; Flying buttress: 407 images; Gargoyle (and Chimera): 1571 images; Stained glass: 1033 images; Vault: 1110 images.\r\nIt is inspired by the CIFAR-10 dataset but with the objective in mind of developing tools that facilitate the tasks of classifying images in the field of cultural heritage documentation.\r\nMost of the images have been obtained from Flickr and Wikimedia Commons (all of them under creative commons license).\r\n", 
+  "license": {
+    "url": "http://www.opendefinition.org/licenses/cc-by", 
+    "type": "cc-by", 
+    "title": "Creative Commons Attribution"
+  }, 
+  "title": "Architectural Heritage Elements image Dataset", 
+  "keywords": [
+    "Cultural heritage", 
+    "Deep Learning", 
+    "Image classification"
+  ], 
+  "author": {
+    "name": "Jose Llamas", 
+    "email": "joslla@cartif.es"
+  }, 
+  "resources": [
+    {
+      "path": "https://datahub.ckan.io/dataset/b3dba928-c6f5-431e-90d0-3bb86e8f42a2/resource/aed19d35-9e7a-4ec3-9234-187dffb5484f/download/architectural_heritage_elements_image_dataset", 
+      "title": "Architectural Heritage Elements image Dataset ", 
+      "description": "This dataset consists of 10235 images (128x128 pixels) classified in 10 categories:\r\nAltar: 829 images; Apse: 514 images; Bell tower: 1059 images; Column: 1919 images; Dome (inner): 616 images; Dome (outer): 1177 images; Flying buttress: 407 images; Gargoyle (and Chimera): 1571 images; Stained glass: 1033 images; Vault: 1110 images.\r\n", 
+      "name": "architectural-heritage-elements-image-dataset", 
+      "format": "ZIP"
+    }, 
+    {
+      "path": "https://correo.cartif.es/home/joslla@cartif.es/Briefcase/Architectural_Heritage_Elements_image_Dataset", 
+      "title": "Architectural Heritage Elements image Dataset ", 
+      "description": "This dataset consists of 10235 images of different sizes classified in 10 categories:\r\nAltar: 829 images; Apse: 514 images; Bell tower: 1059 images; Column: 1919 images; Dome (inner): 616 images; Dome (outer): 1177 images; Flying buttress: 407 images; Gargoyle (and Chimera): 1571 images; Stained glass: 1033 images; Vault: 1110 images.\r\n", 
+      "name": "architectural-heritage-elements-image-dataset0"
+    }, 
+    {
+      "path": "https://datahub.ckan.io/dataset/b3dba928-c6f5-431e-90d0-3bb86e8f42a2/resource/feb088a0-9dd0-4938-9187-e3d64fccdbce/download/architectural_heritage_elements_image_dataset", 
+      "title": "Test dataset (Architectural Heritage Elements image Dataset)", 
+      "description": "This test dataset consists of 1404 images (64x64 pixels) classified in 10 categories", 
+      "name": "test-dataset-architectural-heritage-elements-image-dataset", 
+      "format": "ZIP"
+    }
+  ], 
+  "name": "architectural-heritage-elements-image-dataset"
+}
